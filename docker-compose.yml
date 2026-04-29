@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  transmission:
+    image: linuxserver/transmission:latest
+    container_name: transmission
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Almaty
+      - TRANSMISSION_WEB_UI=transmission-web-control
+    volumes:
+      - /mnt/hdd/configs/transmission:/config
+      - /mnt/hdd/media/Video:/downloads
+      - /mnt/hdd/incomplete:/incomplete
+    ports:
+      - "9091:9091"
+    restart: unless-stopped
+
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    user: "1000:1000"
+    ports:
+      - "4533:4533"
+    environment:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 168h
+      ND_ENABLELEGACYAUTH: true
+    volumes:
+      - /mnt/hdd/configs/navidrome:/data
+      - /mnt/hdd/media/Music:/music:ro
+    logging: 
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  minidlna:
+    image: vladgh/minidlna:latest
+    container_name: minidlna
+    network_mode: host
+    environment:
+      - MINIDLNA_MEDIA_DIR_V=/media/Video
+      - MINIDLNA_MEDIA_DIR_A=/media/Music
+      - MINIDLNA_FRIENDLY_NAME=skycheg-SRV
+      - MINIDLNA_PORT=8200
+      - MINIDLNA_INOTIFY=yes
+      - MINIDLNA_STRICT_DLNA=no
+      - MINIDLNA_ROOT_CONTAINER=B          # Browse by folders — часто стабильнее с большой библиотекой
+      - MINIDLNA_LOG_LEVEL=error           # уменьшаем спам в логах (оставляем только ошибки)
+      - MINIDLNA_MAX_CONNECTIONS=30
+      - MINIDLNA_NOTIFY_INTERVAL=1200
+    volumes:
+      - /mnt/hdd/media/Video:/media/Video:ro
+      - /mnt/hdd/media/Music:/media/Music:ro
+      - /mnt/hdd/configs/minidlna:/config
+    restart: unless-stopped
